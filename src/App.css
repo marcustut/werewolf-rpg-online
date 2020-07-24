@@ -1,5 +1,5 @@
 .App {
-  text-align: center;
+  font-family: 'Roboto', 'Noto Sans SC', sans-serif;
 }
 
 .App-logo {
@@ -9,11 +9,11 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+    /* animation: App-logo-spin infinite 20s linear; */
   }
 }
 
-.App-header {
+.App-container {
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
