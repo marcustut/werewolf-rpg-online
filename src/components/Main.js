@@ -22,8 +22,8 @@ export default function Main() {
         <Switch>
           <Route exact path="/" component={() => <Home />} />
           <Route path="/game" component={() => <Game />} />
-          <Route path="/room" component={() => <Room />} />
-          <Route path="/result" component={() => <Result />} />
+          <Route path="/room/:roomID" component={() => <Room />} />
+          <Route path="/result/:name" component={() => <Result />} />
           <Redirect to="/" />
         </Switch>
       </div>

@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+
+import { withRouter, useParams, Redirect } from "react-router-dom";
 
 import {
   ThemeProvider,
@@ -15,6 +17,8 @@ import {
   withStyles,
   Button
 } from "@material-ui/core";
+
+import firebase from "../services/firebase";
 
 const theme = createMuiTheme({
   typography: {
@@ -34,59 +38,6 @@ const theme = createMuiTheme({
   }
 });
 
-const names = [
-  {
-    id: 1,
-    name: "Marcus Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 2,
-    name: "John Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 3,
-    name: "James Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 4,
-    name: "Peter Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 5,
-    name: "Jian Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 6,
-    name: "Marcus Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 7,
-    name: "John Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 8,
-    name: "James Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 9,
-    name: "Peter Lee",
-    description: "I love to eat Seafood."
-  },
-  {
-    id: 10,
-    name: "Jian Lee",
-    description: "I love to eat Seafood."
-  },
-]
-
 const StyledListItem = withStyles({
   root: {
     backgroundColor: "white",
@@ -97,22 +48,116 @@ const StyledListItem = withStyles({
   selected: {}
 })(ListItem);
 
-export default function Room() {
+function usePlayers(roomID) {
+  const [players, setPlayers] = useState([]);
+
+  useEffect(() => {
+    const unsubscribe = firebase
+      .firestore()
+      .collection('players')
+      .where('roomID', '==', parseInt(roomID))
+      .onSnapshot((snapshot) => {
+        const newPlayers = snapshot.docs.map((doc) => 
+          ({ id: doc.id, ...doc.data() })
+        );
+
+        setPlayers(newPlayers);
+      })
+
+      return () => unsubscribe();
+  }, []);
+
+  return players;
+}
+
+
+const setReady = async (playerName) => {
+  const playerDoc = firebase.firestore().collection('players').doc(playerName);
+  const player = await playerDoc.get();
+
+  let readyStatus = player.data().ready;
+
+  const toggleReady = await playerDoc.update({
+    ready: !readyStatus
+  })
+}
+
+const checkHost = async (playerName, setIsHost) => {
+  const playerDoc = firebase.firestore().collection('players').doc(playerName);
+  var player = await playerDoc.get();
+
+  setIsHost(player.data().host);
+}
+
+const checkAllReady = async (roomID, setAllReady) => {
+  let temp = []
+
+  const playerDoc = await firebase.
+    firestore()
+    .collection('players')
+    .where('roomID', '==', parseInt(roomID))
+    .get();
+
+  const ret = playerDoc.docs.every(doc => doc.data().ready === true);
+
+  setAllReady(ret);
+}
+
+const startGame = (roomID, AllReady, setAllReady, setGameStart) => {
+  checkAllReady(roomID, setAllReady);
+
+  console.log(AllReady)
+
+  if (AllReady) {
+    setGameStart(true);
+  }
+
+  firebase
+    .firestore()
+    .collection('players')
+    .where('roomID', '==', parseInt(roomID))
+    .get()
+    .then(querySnapshot => {
+      querySnapshot.docs.every(doc => console.log(doc.id))
+    })
+}
+
+const Room = (props) => {
+
+  // const { roomID } = useParams();
+  // const { playerName } = props.location.aboutProps;
+  const roomID = localStorage.getItem('RoomID');
+  const playerName = localStorage.getItem('PlayerName');
+  const players = usePlayers(roomID);
+
+  const [isHost, setIsHost] = useState(false);
+  const [AllReady, setAllReady] = useState(false);
+  const [GameStart, setGameStart] = useState(false);
+
+  useEffect(() => {
+    checkHost(playerName, setIsHost);
+  }, [players])
+
+  useEffect(() => {
+    startGame(roomID, AllReady, setAllReady, setGameStart);
+  }, [AllReady])
+
   return (
     <div className="App-container">
       <ThemeProvider theme={theme}>
         <Typography variant="h3">
           <Box fontWeight="fontWeightMedium" mb={3}>
-            5742 房间 <span role="img" aria-label="door">🚪</span>
+            {roomID} 房间 <span role="img" aria-label="door">🚪</span>
           </Box>
           <Paper elevation={7}>
             <List>
-              {names.map(({ id, name, description }) => (
+              <ListSubheader>玩家:</ListSubheader>
+              {players.map(({ id, name, description, ready, avatar, inGame }) => (
                 <React.Fragment key={id}>
-                  {id === 1 && <ListSubheader>玩家:</ListSubheader>}
-                  <StyledListItem button selected={true}>
+                  { inGame ? <Redirect to="/result" /> : null }
+                  <StyledListItem button selected={ready}>
                     <ListItemAvatar>
-                      <Avatar alt="Profile Picture" src="" />
+                      <Avatar alt="Profile Picture" src={avatar} />
                     </ListItemAvatar>
                     <ListItemText primary={name} secondary={description} />
                   </StyledListItem>
@@ -121,11 +166,22 @@ export default function Room() {
             </List>
           </Paper>
         </Typography>
-        <Box m={3}>
-          <Button variant="contained">READY</Button>
-        </Box>
+        {
+          isHost ?
+          <Box m={3}>
+            <Button variant="contained" onClick={() => startGame(roomID, AllReady, setAllReady)}>START GAME</Button>
+          </Box>
+          :
+          <Box m={3}>
+            <Button variant="contained" onClick={() => setReady(playerName)}>READY</Button>
+          </Box>
+        }
+        {
+          AllReady && GameStart ? <Redirect to="/result" /> : null
+        }
       </ThemeProvider>
-
     </div>
   )
 }
+
+export default withRouter(Room);
