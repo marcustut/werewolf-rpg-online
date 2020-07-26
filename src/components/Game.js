@@ -6,6 +6,7 @@ import firebase from "../services/firebase";
 
 import Typography from "@material-ui/core/Typography";
 import { TextField, Button, withStyles, createMuiTheme, ThemeProvider, Grid, Box } from "@material-ui/core";
+import { Alert } from "@material-ui/lab";
 
 const theme = createMuiTheme({
   typography: {
@@ -37,6 +38,27 @@ const Game = (props) => {
   const [RoomID, setRoomID] = useState('');
   const [PlayerName, setPlayerName] = useState('')
 
+  // firebase.auth().signOut();
+
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      // User is signed in
+      const RoomID = localStorage.getItem('RoomID');
+
+      props.history.push({
+        pathname: `/room/${RoomID}`,
+        aboutProps: {
+          playerName: PlayerName
+        }
+      });
+
+      console.log('You are already logged in.');
+    } else {
+      // User is signed out
+      console.log('User is not signed in.');
+    }
+  });
+
   const handleFormSubmit = () => {
     firebase
       .firestore()
@@ -49,23 +71,25 @@ const Game = (props) => {
         'ready': false,
         'role': '',
         'roomID': parseInt(RoomID),
-        'avatar': ''
+        'avatar': '',
+        'inGame': false
       }).then(() => {
         localStorage.setItem('RoomID', parseInt(RoomID));
         localStorage.setItem('PlayerName', PlayerName);
 
-        props.history.push({
-          pathname: `/room/${RoomID}`,
-          aboutProps: {
-            playerName: PlayerName
-          }
-        });
+        firebase.auth().signInAnonymously().catch((error) => {
+          // Handle Errors here
+          console.log(error.code);
+          console.log(error.message);
+        })
       });
-  };
+
+};
 
   return (
     <div className="App-container" style={{ textAlign: "center" }}>
       <ThemeProvider theme={theme}>
+        {props.location.state !== undefined ? <Box mb={3} ><Alert severity="error">{props.location.state.message}</Alert></Box> : null}
         <Grid container direction="column" justify="space-evenly" alignItems="center">
           <Typography variant="h3">
             <Box m={3} fontWeight="fontWeightMedium">

@@ -11,7 +11,6 @@ const firebaseConfig = {
     messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
 
 export const authenticateAnonymously = () => {
     return firebase.auth().signInAnonymously();

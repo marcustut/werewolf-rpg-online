@@ -1,4 +1,6 @@
 import React from "react";
+import { useHistory } from "react-router-dom";
+import firebase from "../services/firebase";
 
 import { 
   Card,
@@ -37,6 +39,24 @@ const classes = {
 }
 
 export default function Result() {
+  // Save the user data in localStorage then delete the User's data in Firestore
+
+  const history = useHistory();
+
+  // signOut the user
+  firebase.auth().onAuthStateChanged((user) => {
+    if (!user) {
+      history.push({
+        pathname: '/game',
+        state: {
+          message: 'You need to enter a room first.'
+        }
+      });
+    }
+  });
+
+  // firebase.auth().signOut();
+
   return (
     <div className="App-container">
       <ThemeProvider theme={theme}>

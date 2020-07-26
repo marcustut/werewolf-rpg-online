@@ -23,7 +23,7 @@ export default function Main() {
           <Route exact path="/" component={() => <Home />} />
           <Route path="/game" component={() => <Game />} />
           <Route path="/room/:roomID" component={() => <Room />} />
-          <Route path="/result/:name" component={() => <Result />} />
+          <Route path="/result/:roomID/:name" component={() => <Result />} />
           <Redirect to="/" />
         </Switch>
       </div>
